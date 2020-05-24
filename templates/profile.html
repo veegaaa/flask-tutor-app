@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block main_content %}
+  <main class="container mt-3">
+    <div class="card my-4 mx-auto">
+      <div class="card-body m-2 m-md-4">
+        <article class="row">
+          <div class="col-5"><img src="{{ curr_tutor['picture'] }}" class="img-fluid" alt=""></div>
+          <div class="col-7">
+
+            <section class="teacher=info">
+              <h1 class="h2">{{ curr_tutor['name'] }}</h1>
+              <p>
+                {% for goal in curr_tutor['goals'] %}
+                <span class="badge badge-secondary mr-2">{{ goals[goal] }}</span>
+                {% endfor %}
+                Рейтинг: {{ curr_tutor['rating'] }} Ставка: {{ curr_tutor['price'] }} / час</p>
+              <p>{{ curr_tutor['about'] }}</p>
+            </section>
+
+            <section class="available">
+
+              <h4 class="mb-4 mt-5">Записаться на пробный урок</h4>
+
+              {% for day in days_of_week_dict %}
+              <h6 class="mt-4">{{ days_of_week_dict[day] }}</h6>
+              {% if curr_tutor_free[day].values()|max == True %}
+                {% for time in curr_tutor_free[day] %}
+                 {% if curr_tutor_free[day][time] %}
+                    <a href="{{ url_for('template_booking',
+                              tutor_id=curr_tutor['id'],
+                              day_of_week=day,
+                              time=time) }}" class="btn btn-outline-success m-1">{{ time }} свободно</a>
+                  {% endif %}
+                {% endfor %}
+              {% else %}
+                <p>No free time</p>
+              {% endif %}
+              {% endfor %}
+            </section>
+
+          </div>
+        </article>
+      </div>
+
+    </div>
+
+    <h2 class="text-center mt-5 mb-3">Не нашли своего репетитора?</h2>
+    <p class="text-center mb-4">Расскажите, кто вам нужен и мы подберем его сами</p>
+    <div class="text-center pb-5">
+        <a href="{{ url_for('template_request') }}" class="btn btn-primary">Заказать подбор</a>
+    </div>
+  </main>
+
+{% endblock %}

@@ -14,3 +14,6 @@ days_of_week_dict = {
 
 with open('data/goals.json') as json_file:
     goals = json.load(json_file)
+
+
+import gunicorn

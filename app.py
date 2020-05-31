@@ -2,7 +2,7 @@ from flask import Flask, url_for, request
 from flask import render_template
 import json
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField
+from wtforms import StringField, SubmitField, RadioField
 from wtforms.validators import InputRequired
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -11,7 +11,7 @@ from flask_migrate import Migrate
 from params import params
 from params import days_of_week_dict
 from params import goals
-# from params import tutors
+from params import time_amount_dict
 
 app = Flask(__name__)
 app.config["DEBUG"] = True
@@ -22,6 +22,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
+
 
 class Tutor(db.Model):
     __tablename__ = "tutors"
@@ -37,6 +38,7 @@ class Tutor(db.Model):
 
     booking = db.relationship("Booking", back_populates="tutor")
 
+
 class Booking(db.Model):
     __tablename__ = "bookings"
 
@@ -48,6 +50,17 @@ class Booking(db.Model):
 
     tutor = db.relationship("Tutor", back_populates="booking")
     tutor_id = db.Column(db.Integer, db.ForeignKey('tutors.id'))
+
+
+class Application(db.Model):
+    __tablename__ = "applications"
+
+    id = db.Column(db.Integer, primary_key=True)
+    student_name = db.Column(db.String(50))
+    phone_number = db.Column(db.String(20))
+    time_amount = db.Column(db.String(20)),
+    goal = db.Column(db.String(20)),
+
 
 ######################################
 
@@ -68,6 +81,14 @@ class BookLessonForm(FlaskForm):
     name = StringField('Your name', [InputRequired()])
     phone = StringField('Your phone', [InputRequired()])
     submit = SubmitField()
+
+
+class ApplySelectionForm(FlaskForm):
+    goal = RadioField('Your goal', choices=[(k, v) for k, v in goals.items()], default='work', validators=[InputRequired()])
+    time_amount = RadioField('Time you have', choices = [(k, v) for k, v in time_amount_dict.items()], default='key2', validators=[InputRequired()])
+    name = StringField('Your name', [InputRequired()])
+    phone = StringField('Your phone', [InputRequired()])
+    submit = SubmitField('Request tutor search')
 
 ######################################
 
@@ -109,16 +130,27 @@ def template_profiles(tutor_id):
                            **params)
 
 
-@app.route("/request")
+@app.route("/request", methods=['GET','POST'])
 def template_request():
-    return render_template("request.html",
+    application_form = ApplySelectionForm()
+    if request.method == 'GET':
+        return render_template("request.html", application_form=application_form,
                            **params)
-
-
-@app.route("/request_done")
-def template_request_done():
-    return render_template("request_done.html",
-                           **params)
+    else:
+        appl = Application(
+            student_name=application_form.name.data,
+            phone_number=application_form.phone.data,
+            time_amount=application_form.time_amount.data,
+            goal=application_form.goal.data,
+        )
+        db.session.add(appl)
+        db.session.commit()
+        return render_template("request_done.html",
+                               name=application_form.name.data,
+                               phone=application_form.phone.data,
+                               time_amount=time_amount_dict[application_form.time_amount.data],
+                               goal=goals[application_form.goal.data],
+                               **params)
 
 
 @app.route("/booking/<tutor_id>/<day_of_week>/<time>/", methods=['GET','POST'])
@@ -166,72 +198,3 @@ def template_booking(tutor_id, day_of_week, time):
 #     print("safasfasfasfasfasfsafsa")
 
 # app.run('0.0.0.0', 8000, debug=True)
-
-
-
-
-# import datetime
-# from flask import Flask
-# from flask_sqlalchemy import SQLAlchemy
-#
-# app = Flask(__name__)
-# app.secret_key = 'randomstring'
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///products.db'
-# app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-# db = SQLAlchemy(app)
-#
-# class Product(db.Model):
-#     __tablename__ = "products"
-#
-#     id = db.Column(db.Integer, primary_key=True)
-#     name = db.Column(db.String, nullable=False, unique=True)
-#     created_at = db.Column(db.DateTime, nullable=False)
-#
-# db.create_all()
-#
-# _products = []
-# _products.append(Product(name="Бефстроганов классический", created_at=datetime.date(year=2000, month=4, day=3)))
-# _products.append(Product(name="Грузди соленые", created_at=datetime.date(year=2000, month=2, day=10)))
-# _products.append(Product(name="Гвозди жареные", created_at=datetime.date(year=2000, month=2, day=14)))
-# _products.append(Product(name="Ряпушка по-карельски", created_at=datetime.date(year=2000, month=3, day=12)))
-# _products.append(Product(name="Голубцы с перловкой и грибами", created_at=datetime.date(year=2000, month=4, day=2)))
-# db.session.add_all(_products)
-# Product.name
-# db.session.commit()
-#
-# products_query = db.session.query(Product).order_by(Product.created_at)
-# products = products_query.all()
-# print("Получили", len(products), "продуктов")
-# for product in products:
-#     print("Продукт", product.name, "был создан", product.created_at)
-#
-# db.session.query(Product).get_or_404(13)
-#
-#
-# class User(db.Model):
-#     __tablename__ = 'users'
-#     id = db.Column(db.Integer, primary_key=True)
-#
-#     mobile_phone = db.relationship("MobilePhone", uselist=False, back_populates="user")
-#
-#
-# class MobilePhone(db.Model):
-#     __tablename__ = 'mobile_phones'
-#     id = db.Column(db.Integer, primary_key=True)
-#     phone = db.Column(db.String, nullable=False)
-#     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-#
-#     user = db.relationship("User", back_populates="mobile_phone")
-#
-# db.create_all()
-# user = User()
-# db.session.add(user)
-# phone = MobilePhone(user=user, phone='1')
-# print(phone.user)#<User (transient 4326580432)>
-# print(user.mobile_phone)#<MobilePhone (transient 4343758992)>
-# print(user.mobile_phone.user)#<MobilePhone (transient 4343758992)>
-# db.session.commit()
-# db.session.rollback()
-# print(phone.user)#<User 2>
-# print(user.mobile_phone)#<MobilePhone 2>
-

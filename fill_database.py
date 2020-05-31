@@ -58,3 +58,12 @@ db.session.commit()
 
 for t in db.session.query(Booking).all():
     print(t.tutor_id, t.id, t.time, t.student_name, t.day_of_week)
+
+from app import Application
+for t in db.session.query(Application).all():
+    print(t, 1, t.student_name)
+
+Application.__table__.drop(db.engine)
+db.session.query("drop table applicationsasfasf")
+db.session.commit()
+

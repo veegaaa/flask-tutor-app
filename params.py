@@ -14,6 +14,3 @@ days_of_week_dict = {
 
 with open('data/goals.json') as json_file:
     goals = json.load(json_file)
-
-with open('data/tutors.json') as json_file:
-    tutors = json.load(json_file)
